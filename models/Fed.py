@@ -6,10 +6,18 @@ import copy
 import torch
 from torch import nn
 
+def recursive_to(obj, dtype):
+    if isinstance(obj, dict):
+        for key in obj:
+            obj[key] = recursive_to(obj[key], dtype)
+    elif isinstance(obj, torch.Tensor):
+        obj = obj.to(dtype)
+    return obj
 
 def FedAvg(w,w_global):
     w_avg = copy.deepcopy(w[0])
     w_global_saved = copy.deepcopy(w_global)
+    w_global_saved = recursive_to(w_global_saved, torch.float32)
     for k in w_avg.keys():
         for i in range(1, len(w)):
             w_avg[k] += w[i][k]
