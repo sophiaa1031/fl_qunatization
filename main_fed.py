@@ -9,7 +9,7 @@ import copy
 import numpy as np
 from torchvision import datasets, transforms
 import torch
-from utils.sampling import mnist_iid, mnist_noniid, cifar_iid, cifar100_iid
+from utils.sampling import mnist_iid, mnist_noniid, cifar_iid,  cifar_noniid, cifar100_iid
 from utils.options import args_parser
 from utils.calculate import subtract
 from utils.quant_process import quant_process
@@ -19,6 +19,7 @@ from models.Fed import FedAvg
 from models.test import test_img
 import os
 import sys
+import time
 
 def saveData(my_list, file_path, way):
     try:
@@ -50,7 +51,7 @@ def mainFunction(bit):
             len_in *= x
         net_glob = MLP(dim_in=len_in, dim_hidden=30, dim_out=args.num_classes).to(args.device)
     elif args.model == 'resnet':
-        net_glob = ResNet(BasicBlock, [3, 3, 3]).to(args.device)
+        net_glob = ResNet(BasicBlock, [3, 3, 3],args.num_classes, args.num_channels).to(args.device)
     else:
         exit('Error: unrecognized model')
     print(net_glob)
@@ -79,7 +80,11 @@ def mainFunction(bit):
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
         for idx in idxs_users:
             local = LocalUpdate(args=args, dataset=dataset_train, idxs=dict_users[idx])
+            start_time = time.time()
             w, loss = local.train(net=copy.deepcopy(net_glob).to(args.device))
+            end_time = time.time()
+            training_time = end_time - start_time
+            print(f"模型训练时间：{training_time:.2f} 秒")
             w_update_local = subtract(w, w_glob)
             local_quant = quant_process(w_update_local, args.quantization_bits,args.device)
             # w_update_local, communication_cost, mse_error = local_quant.quant()
@@ -102,13 +107,13 @@ def mainFunction(bit):
         loss_train.append(loss_avg)
 
         # testing
-        net_glob.eval()
-        # acc_train, loss_train = test_img(net_glob, dataset_train, args)
-
-        acc_test, loss_test = test_img(net_glob, dataset_test, args)
-        # print("Training accuracy: {:.2f}, loss : {:.2f}".format(acc_train,loss_train))
-        print("Testing accuracy: {:.2f}, loss : {:.2f}".format(acc_test,loss_test))
-        acc_saved.append(acc_test.item())
+        # net_glob.eval()
+        # # acc_train, loss_train = test_img(net_glob, dataset_train, args)
+        #
+        # acc_test, loss_test = test_img(net_glob, dataset_test, args)
+        # # print("Training accuracy: {:.2f}, loss : {:.2f}".format(acc_train,loss_train))
+        # print("Testing accuracy: {:.2f}, loss : {:.2f}".format(acc_test,loss_test))
+        # acc_saved.append(acc_test.item())
 
     # save data
     subfolder = 'debug' # local_debug, debug
@@ -116,9 +121,8 @@ def mainFunction(bit):
     file_path = folder_path+str(bit)+'_bit.txt'  # 指定文件路径(remove_malicious, attack, all_benign,attack_middle)
     saveData(loss_train, file_path,'w')
 
-    # file_path = 'figures_data/acc_saved.txt'  # 指定文件路径(remove_malicious, attack, all_benign,attack_middle)
-    file_path_acc = folder_path+str(bit)+'_bit_acc.txt'  # 指定文件路径(remove_malicious, attack, all_benign,attack_middle)
-    saveData(acc_saved, file_path_acc, 'w')
+    # file_path_acc = folder_path+str(bit)+'_bit_acc.txt'  # 指定文件路径(remove_malicious, attack, all_benign,attack_middle)
+    # saveData(acc_saved, file_path_acc, 'w')
 
     # plot loss curve
     # plt.figure()
@@ -133,7 +137,7 @@ if __name__ == '__main__':
     args = args_parser()
     args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
-    # args.dataset = 'cifar'
+    # args.dataset = 'cifar100'
     # args.iid = True
     # args.epochs = 20
     # args.lr = 0.01
@@ -157,7 +161,8 @@ if __name__ == '__main__':
         if args.iid:
             dict_users = cifar_iid(dataset_train, args.num_users)
         else:
-            exit('Error: only consider IID setting in CIFAR10')
+            dict_users = cifar_noniid(dataset_train, args.num_users)
+
     elif args.dataset == 'cifar100':
         args.num_classes = 100
         trans_cifar100 = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -171,6 +176,6 @@ if __name__ == '__main__':
         exit('Error: unrecognized dataset')
     img_size = dataset_train[0][0].shape
 
-    for bit in [32,6]:
+    for bit in [8]:
         mainFunction(bit)
 
