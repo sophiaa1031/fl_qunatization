@@ -107,22 +107,23 @@ def mainFunction(bit):
         loss_train.append(loss_avg)
 
         # testing
-        # net_glob.eval()
-        # # acc_train, loss_train = test_img(net_glob, dataset_train, args)
-        #
-        # acc_test, loss_test = test_img(net_glob, dataset_test, args)
-        # # print("Training accuracy: {:.2f}, loss : {:.2f}".format(acc_train,loss_train))
-        # print("Testing accuracy: {:.2f}, loss : {:.2f}".format(acc_test,loss_test))
-        # acc_saved.append(acc_test.item())
+        net_glob.eval()
+        # acc_train, loss_train = test_img(net_glob, dataset_train, args)
+
+        acc_test, loss_test = test_img(net_glob, dataset_test, args)
+        # print("Training accuracy: {:.2f}, loss : {:.2f}".format(acc_train,loss_train))
+        print("Testing accuracy: {:.2f}, loss : {:.2f}".format(acc_test,loss_test))
+        acc_saved.append(acc_test.item())
 
     # save data
     subfolder = 'debug' # local_debug, debug
     folder_path = 'figures_data/'+subfolder+'/'
+    # loss 保存
     file_path = folder_path+str(bit)+'_bit.txt'  # 指定文件路径(remove_malicious, attack, all_benign,attack_middle)
     saveData(loss_train, file_path,'w')
-
-    # file_path_acc = folder_path+str(bit)+'_bit_acc.txt'  # 指定文件路径(remove_malicious, attack, all_benign,attack_middle)
-    # saveData(acc_saved, file_path_acc, 'w')
+    # acc 保存
+    file_path_acc = folder_path+str(bit)+'_bit_acc.txt'  # 指定文件路径(remove_malicious, attack, all_benign,attack_middle)
+    saveData(acc_saved, file_path_acc, 'w')
 
     # plot loss curve
     # plt.figure()
@@ -176,6 +177,7 @@ if __name__ == '__main__':
         exit('Error: unrecognized dataset')
     img_size = dataset_train[0][0].shape
 
-    for bit in [8]:
+    # for bit in [args.quantization_bits]:
+    for bit in [32,7]:
         mainFunction(bit)
 

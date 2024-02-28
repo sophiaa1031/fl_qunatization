@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # 指定包含文件的目录路径
-directory_path = "figures_data/cifar_iid_resnet20_le5_num6" # "local_debug/debug"
+directory_path = "figures_data/cifar100_iid_resnet20_le5_num6/acc" # "local_debug/debug" cifar_iid_resnet20_le5_num6 cifar_noniid_resnet_num6
 # "figures_data/mnist_loss_mlp10"
 
 def new_x(timestamp):
@@ -20,7 +20,7 @@ timestamp9 = new_x([0.34310550549210284, 0.3419564382725696, 0.340808188308588, 
 timestamp10 =  new_x([0.35345056165789207, 0.35213527451361726, 0.3508212964845725, 0.3495081918626004, 0.34819550169947733, 0.34688274125829177, 0.3455693971272551, 0.34425492393960455, 0.3429387406319136, 0.34162022615907295, 0.34029871456670874, 0.3389734892998633, 0.3376437765990756, 0.3363087377998004, 0.3349674603060237, 0.33361894695071603, 0.3322621033799536, 0.33089572299787834, 0.3295184688773953, 0.3281288518640594, 0.3267252038598817, 0.3253056449432091, 0.323868042520902, 0.32240996006002687, 0.3209285920164009, 0.3194206802228705, 0.31788240499186177, 0.31630924115110526, 0.31469576454761033, 0.3130353871688092, 0.3113199871171733, 0.3095393800357513, 0.30768054561081926, 0.3057264670640856, 0.30365435011792574, 0.301432860561105, 0.29901799416152275, 0.2963484183235415, 0.29335247407210213, 0.2900765475032816, 0.28769211161970754, 0.289055990321352, 0.29225753336545873, 0.29534056369188344, 0.2980924097693912, 0.30057097454771053, 0.3028410260666159, 0.3049506332391361, 0.3069341198853803, 0.30881634731996566])
 timestamp32 = new_x([0.5810417973052546, 0.5741166893761637, 0.5672408874555461, 0.5604080658947332, 0.55361156868971, 0.5468443368920619, 0.5400988211863684, 0.5333668754930978, 0.5266396260553241, 0.5199073084938554, 0.5131590624904543, 0.5063826696458986, 0.49956421395802253, 0.4926876351244067, 0.4857341305581767, 0.478681339260394, 0.47150220353597666, 0.46416334194404063, 0.4566226577998189, 0.44882571045698527, 0.44070000706668033, 0.43214565758015766, 0.4230194470522465, 0.41310699785320476, 0.40207749920016694, 0.3894699426174608, 0.37566973709613427, 0.37156934428131844, 0.38360573072946647, 0.3965415437886889, 0.4079223884122946, 0.4180827850588437, 0.42737621155061967, 0.4360411372593273, 0.4442370589049105, 0.45207446107819094, 0.45963285203378673, 0.46697144621708087, 0.4741356765841602, 0.48116131133717105, 0.4880771491382659, 0.4949068405756859, 0.5016701543474609, 0.5083838796807274, 0.5150624838803106, 0.5217186009907846, 0.5283634014263927, 0.5350068760641751, 0.5416580577918141, 0.5483251966007557])
 time = [timestamp7, timestamp8,timestamp9,timestamp10,timestamp32]
-label_list = [r'$\epsilon=\epsilon_1$', r'$\epsilon=\epsilon_2$', r'$\epsilon=\epsilon_3$', r'$\epsilon=\epsilon_4$', 'Full-bits']
+label_list = [r'$\epsilon=\epsilon_1$', r'$\epsilon=\epsilon_2$', r'$\epsilon=\epsilon_3$', r'$\epsilon=\epsilon_4$', 'MaxBits']
 # 自定义排序函数，按照文件名中的数字部分进行排序
 
 def custom_sort(file):
@@ -36,21 +36,35 @@ def loss_nozerotrust(path):
     all_data = []
     i=0
     # 循环读取每个文件的数据并存储到all_data列表中
+    fig, ax = plt.subplots(figsize=(6.5, 5))
     for file in files:
         file_path = os.path.join(directory_path, file)
         # legend_label = os.path.splitext(file)[0]  # 使用文件名作为legend标签
         legend_label = label_list[i]
         data = np.loadtxt(file_path)
-        plt.plot(time[i], data, label=legend_label)
+        if i == 0:
+            marker = 'o'
+        elif i == 1:
+            marker = 's'
+        elif i == 2:
+            marker = 'x'
+        elif i == 3:
+            marker = '^'
+        elif i == 4:
+            marker = 'd'
+        plt.plot(time[i], data, label=legend_label,marker=marker, markevery=5,markersize=8,markerfacecolor='none')
+        # plt.plot(range(len(data)), data, label=legend_label)
         i+=1
 
     # 显示图形
-    plt.xlabel("Latency (s)", fontsize=12)
-    plt.ylabel("Training Loss", fontsize=12)  # Testing Accuracy, Training Loss
-    plt.legend(fontsize=12)  # 显示legend标签
+    ax.set_xlabel("Latency (s)", fontsize=16)
+    ax.set_ylabel("Testing Accuracy", fontsize=16)  # Testing Accuracy, Training Loss
+    ax.tick_params(axis='x', labelsize=12)
+    ax.tick_params(axis='y', labelsize=12)
+    ax.legend(ncol=1, fontsize=11) #11 13
     # plt.title(directory_path)
-    # plt.savefig('save/cifar_iid_resnet20_50epoch.png')  # 保存为PNG格式图片
-    plt.grid()
+    plt.grid(True)
+    plt.savefig('save/cifar100_iid_resnet20_50epoch_acc.png')  # 保存为PNG格式图片
     plt.show()
 
 loss_nozerotrust(directory_path)
